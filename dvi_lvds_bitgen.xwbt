@@ -1,0 +1,8 @@
+INTSTYLE=ise
+INFILE=/home/julbouln/Perso/fpga/dvi_lvds/dvi_lvds.ncd
+OUTFILE=/home/julbouln/Perso/fpga/dvi_lvds/dvi_lvds.bit
+FAMILY=Spartan6
+PART=xc6slx9-3ftg256
+WORKINGDIR=/home/julbouln/Perso/fpga/dvi_lvds
+LICENSE=WebPack
+USER_INFO=210852263_0_0_730

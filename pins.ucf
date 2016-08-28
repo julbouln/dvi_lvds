@@ -1,0 +1,22 @@
+NET "CLK50"    LOC = "K3" | IOSTANDARD = LVCMOS33 | PERIOD = 50 MHz;
+
+NET "channel1_p" LOC = "D8"; # A2
+NET "channel1_n" LOC = "C8"; # A1
+NET "channel2_p" LOC = "B10"; # A6
+NET "channel2_n" LOC = "A10"; # A5
+NET "channel3_p" LOC = "E10"; # A8
+NET "channel3_n" LOC = "C10"; # A7
+NET "clock_p" LOC = "F9"; # A9
+NET "clock_n" LOC = "D9"; # A4
+
+CONFIG VCCAUX=3.3;
+
+NET "RX_TMDSB(0)"     	LOC="A7" | IOSTANDARD=TMDS_33; # Blue
+NET "RX_TMDS(0)"     	LOC="C7" | IOSTANDARD=TMDS_33;
+NET "RX_TMDSB(1)"     	LOC="A6" | IOSTANDARD=TMDS_33; # Green
+NET "RX_TMDS(1)"     	LOC="B6" | IOSTANDARD=TMDS_33;
+NET "RX_TMDS(2)"     	LOC="B5" | IOSTANDARD=TMDS_33; # Red
+NET "RX_TMDSB(2)"     	LOC="A5" | IOSTANDARD=TMDS_33;
+
+NET "RX_TMDS(3)"	 		LOC="C9" | IOSTANDARD=TMDS_33;
+NET "RX_TMDSB(3)"	 	LOC="A9" | IOSTANDARD=TMDS_33;

@@ -1,0 +1,26 @@
+Simple DVI to LVDS Verilog converter
+
+Tested with Rapsberry Pi, minispartan6+ and LP089WS1-TLA2 LCD panel
+
+Since there is only video signal, panel must be configured in Rasperry Pi config.txt, eg for LP089WS1 :
+
+# force console size
+framebuffer_width=1024
+framebuffer_height=600
+ 
+hdmi_force_hotplug=1
+hdmi_cvt=1024 600 60 3 0 0 0
+  
+hdmi_group=2
+hdmi_mode=87
+
+# panel is 18-bits so dither from 24-bits
+hvs_set_dither=0x211
+
+References:
+minispartan6+ : https://www.scarabhardware.com/minispartan6/
+LP089WS1 datasheet : http://static1.1.sqspcdn.com/static/f/489821/11953269/1386278097933/LP089WS1-TLA1.pdf
+LVDS encoder : Verilog implementation of 7-to-1 LVDS Serializer https://github.com/racerxdl/LVDS-7-to-1-Serializer
+DVI / HDMI decoder : Xilinx XAPP460 http://www.xilinx.com/support/documentation/application_notes/xapp460.pdf
+10" 1024x600 panel raspberry pi config : Adafruit Pixel Qi 10" https://learn.adafruit.com/hdmi-uberguide/1303-pixel-qi-10-display-with-controller-1024x600
+18 bits dithering raspberry pi config : https://www.raspberrypi.org/forums/viewtopic.php?f=41&t=45290
