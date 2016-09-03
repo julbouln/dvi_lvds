@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-//  Xilinx, Inc. 2007                 www.xilinx.com
+//  Xilinx, Inc. 2010                 www.xilinx.com
 //
 //  XAPP xxx
 //
@@ -8,7 +8,7 @@
 //
 //  File name :       decoder.v
 //
-//  Description :     dvi decoder 
+//  Description :     Spartan-6 dvi decoder 
 //
 //
 //  Author :          Bob Feng
@@ -44,239 +44,123 @@
 //////////////////////////////////////////////////////////////////////////////
 `timescale 1 ns / 1ps
 
-module decode # (
-  parameter TMDS_INVERT = "FALSE"
-)
-(
-  input  wire stbclk,           //stable clock from board: Only used to generate reset
-  input  wire clk,              //clk from dvi cable
-  input  wire din_p,            //data from dvi cable
-  input  wire din_n,            //data from dvi cable
-  input  wire other_ch0_vld,    //other channel0 has valid data now
-  input  wire other_ch1_vld,    //other channel1 has valid data now
-  input  wire other_ch0_rdy,    //other channel0 has detected a valid starting pixel
-  input  wire other_ch1_rdy,    //other channel1 has detected a valid starting pixel
+module decode (
+  input  wire reset,            //
+  input  wire pclk,             //  pixel clock
+  input  wire pclkx2,           //  double pixel rate for gear box
+  input  wire pclkx10,          //  IOCLK
+  input  wire serdesstrobe,     //  serdesstrobe for iserdes2
+  input  wire din_p,            //  data from dvi cable
+  input  wire din_n,            //  data from dvi cable
+  input  wire other_ch0_vld,    //  other channel0 has valid data now
+  input  wire other_ch1_vld,    //  other channel1 has valid data now
+  input  wire other_ch0_rdy,    //  other channel0 has detected a valid starting pixel
+  input  wire other_ch1_rdy,    //  other channel1 has detected a valid starting pixel
 
-  output wire clkx5,
-  output wire clkx5not,
-  output wire rst,
-
-  output wire iamvld,           //I have valid data now
-  output wire iamrdy,           //I have detected a valid new pixel
-  output wire psalgnerr,        //Phase alignment error
-  output reg c0,
-  output reg c1,
-  output reg de,     
+  output wire iamvld,           //  I have valid data now
+  output wire iamrdy,           //  I have detected a valid new pixel
+  output wire psalgnerr,        //  Phase alignment error
+  output reg  c0,
+  output reg  c1,
+  output reg  de,     
   output reg [9:0] sdout,
   output reg [7:0] dout);
 
-  wire dint, d0, d1;
-  wire dcmlck;
-  wire dcmrst;
-  wire [7:0] dcm_status;
+  ////////////////////////////////
+  //
+  // 5-bit to 10-bit gear box
+  //
+  ////////////////////////////////
+  wire flipgear;
+  reg flipgearx2;
 
-  dcminit dcminit_0(
-    .stbclk(stbclk),
-    .dcmlck(dcmlck),
-    .dcmclkin_st(dcm_status[1]),
-    .dcmrst(dcmrst)
-  );
+  always @ (posedge pclkx2) begin
+    flipgearx2 <=#1 flipgear;
+  end
 
-  IBUFDS #(.IOSTANDARD("TMDS_33"), .IFD_DELAY_VALUE("0"), .DIFF_TERM("FALSE"))
-  ibufdin (.I(din_p), .IB(din_n), .O(dint));
+  reg toggle = 1'b0;
 
-  IDDR2 #(.DDR_ALIGNMENT("C0"))
-  fddrdin (
-          .C0(clkx5),
-          .C1(clkx5not), 
-          .D(dint),
-          .CE(1'b1),
-          .R(1'b0),
-          .S(1'b0),
-          .Q0(d0),
-          .Q1(d1));
+  always @ (posedge pclkx2 or posedge reset)
+    if (reset == 1'b1) begin
+      toggle <= 1'b0 ;
+    end else begin
+      toggle <=#1 ~toggle;
+    end
+  
+  wire rx_toggle;
 
-  wire clkx5dcm, clkx5notdcm;
-  wire psen, psincdec;
+  assign rx_toggle = toggle ^ flipgearx2; //reverse hi-lo position
 
-  wire clk_fdbk;
+  wire [4:0] raw5bit;
+  reg [4:0] raw5bit_q;
+  reg [9:0] rawword;
 
-  DCM_SP #(
-    .CLKIN_PERIOD       (13),
-    .CLKFX_DIVIDE	      (1),	
-    .CLKFX_MULTIPLY	    (5),
-    .CLKOUT_PHASE_SHIFT ("VARIABLE"),
-    .PHASE_SHIFT        (0), 
-    .DESKEW_ADJUST      ("SOURCE_SYNCHRONOUS"))
-  dcm_rxclk (
-    .CLKIN    (clk),
-    .CLKFB    (clk_fdbk),
-    .DSSEN    (1'b0),
-    .PSINCDEC (psincdec),
-    .PSEN     (psen),
-    .PSCLK    (clk),
-    .RST      (dcmrst),
-    .CLK0     (clk_fdbk),
-    .CLK90    (),
-    .CLK180   (),
-    .CLK270   (),
-    .CLK2X    (),
-    .CLK2X180 (),
-    .CLKDV    (),
-    .CLKFX    (clkx5dcm),
-    .CLKFX180 (clkx5notdcm),
-    .LOCKED   (dcmlck),
-    .PSDONE   (psdone),
-    .STATUS   (dcm_status)) ;
+  always @ (posedge pclkx2) begin
+    raw5bit_q    <=#1 raw5bit;
 
-  BUFG  clkx5_bufg    (.I(clkx5dcm),    .O(clkx5));
-  BUFG  clkx5not_bufg (.I(clkx5notdcm), .O(clkx5not));
+    if(rx_toggle) //gear from 5 bit to 10 bit
+      rawword <=#1 {raw5bit, raw5bit_q};
+  end
 
-  assign rst = !(dcmlck === 1'b1); //~dcmlck;
+  ////////////////////////////////
+  //
+  // bitslip signal sync to pclkx2
+  //
+  ////////////////////////////////
+  reg bitslipx2 = 1'b0;
+  reg bitslip_q = 1'b0;
+  wire bitslip;
 
-  wire tmds_d0, tmds_d1;
+  always @ (posedge pclkx2) begin
+    bitslip_q <=#1 bitslip;
+    bitslipx2 <=#1 bitslip & !bitslip_q;
+  end 
 
-  assign tmds_d0 = (TMDS_INVERT == "TRUE") ? ~d0 : d0;
-  assign tmds_d1 = (TMDS_INVERT == "TRUE") ? ~d1 : d1;
-
-  wire [9:0] rawword;
-  tmds_1c_1to10 des (
-    .clk(clk),
-    .clkx5(clkx5),
-    .rst(rst),
-    .d0(tmds_d0), 
-    .d1(tmds_d1), 
-    .dataout(rawword)
+  /////////////////////////////////////////////
+  //
+  // 1:5 de-serializer working at x2 pclk rate
+  //
+  /////////////////////////////////////////////
+  serdes_1_to_5_diff_data # (
+    .DIFF_TERM("FALSE"),
+    .BITSLIP_ENABLE("TRUE")
+  ) des_0 (
+    .use_phase_detector(1'b1),
+    .datain_p(din_p),
+    .datain_n(din_n),
+    .rxioclk(pclkx10),
+    .rxserdesstrobe(serdesstrobe),
+    .reset(reset),
+    .gclk(pclkx2),
+    .bitslip(bitslipx2),
+    .data_out(raw5bit)
   );
 
   /////////////////////////////////////////////////////
   // Doing word boundary detection here
   /////////////////////////////////////////////////////
-
-  // Distinct Control Tokens
-  parameter CTRLTOKEN0 = 10'b1101010100;
-  parameter CTRLTOKEN1 = 10'b0010101011;
-  parameter CTRLTOKEN2 = 10'b0101010100;
-  parameter CTRLTOKEN3 = 10'b1010101011;
-
-  reg [9:0] rawword_q;
-
-  always @ (posedge clk) begin
-    rawword_q <=#1 rawword;
-  end
-
-  wire found_vld_openeye;
-
-  wire [19:0] two_raw_words = {rawword, rawword_q};
-
-  reg [9:0] word_sel;
-  always @ (posedge clk or posedge rst) begin
-    if(rst)
-      word_sel <= 10'h1;
-    else if(!found_vld_openeye)
-      casez (two_raw_words)
-        {CTRLTOKEN0, 10'b??????????}:
-          word_sel <=#1 10'h1;
-
-        {1'b?, CTRLTOKEN0, 9'b?????????}:
-          word_sel <=#1 10'h1 << 1;
-
-        {2'b??, CTRLTOKEN0, 8'b????????}:
-          word_sel <=#1 10'h1 << 2;
-
-        {3'b???, CTRLTOKEN0, 7'b???????}:
-          word_sel <=#1 10'h1 << 3;
-
-        {4'b????, CTRLTOKEN0, 6'b??????}:
-          word_sel <=#1 10'h1 << 4;
-
-        {5'b?????, CTRLTOKEN0, 5'b?????}:
-          word_sel <=#1 10'h1 << 5;
-
-        {6'b??????, CTRLTOKEN0, 4'b????}:
-          word_sel <=#1 10'h1 << 6;
-
-        {7'b???????, CTRLTOKEN0, 3'b???}:
-          word_sel <=#1 10'h1 << 7;
-
-        {8'b????????, CTRLTOKEN0, 2'b??}:
-          word_sel <=#1 10'h1 << 8;
-
-        {9'b?????????, CTRLTOKEN0, 1'b?}:
-          word_sel <=#1 10'h1 << 9;
-
-        default:
-          word_sel <=#1 word_sel;
-      endcase
-  end
-
-  reg [9:0] rawdata;
-  always @ (posedge clk or posedge rst) begin
-    if(rst)
-      rawdata <= 10'h0;
-    else
-      case (1'b1) // synthesis parallel_case full_case
-        word_sel[0]:
-          rawdata <=#1 rawword;
-
-        word_sel[1]:
-          rawdata <=#1 {rawword[8:0], rawword_q[9]};
-
-        word_sel[2]:
-          rawdata <=#1 {rawword[7:0], rawword_q[9:8]};
-
-        word_sel[3]:
-          rawdata <=#1 {rawword[6:0], rawword_q[9:7]};
-
-        word_sel[4]:
-          rawdata <=#1 {rawword[5:0], rawword_q[9:6]};
-
-        word_sel[5]:
-          rawdata <=#1 {rawword[4:0], rawword_q[9:5]};
-
-        word_sel[6]:
-          rawdata <=#1 {rawword[3:0], rawword_q[9:4]};
-
-        word_sel[7]:
-          rawdata <=#1 {rawword[2:0], rawword_q[9:3]};
-
-        word_sel[8]:
-          rawdata <=#1 {rawword[1:0], rawword_q[9:2]};
-
-        word_sel[9]:
-          rawdata <=#1 {rawword[0], rawword_q[9:1]};
-      endcase
-  end
+  wire [9:0] rawdata = rawword;
 
   ///////////////////////////////////////
   // Phase Alignment Instance
   ///////////////////////////////////////
-  wire phsalgn_err;
-  reg  phsalgn_err_q, phsalgn_err_rising;
-
-  always @ (posedge clk) begin
-    phsalgn_err_q <=#1 phsalgn_err;
-    phsalgn_err_rising <=#1 phsalgn_err & !phsalgn_err_q;
-  end
-
   phsaligner phsalgn_0 (
-    .rst(rst | phsalgn_err_rising),
-    .clk(clk),
-    .sdata(rawdata),
-    .psdone(psdone),
-    .dcm_ovflw(dcm_status[0]),
-    .found_vld_openeye(found_vld_openeye),
-    .psen(psen),
-    .psincdec(psincdec),
-    .psaligned(iamvld), //achieved phase lock
-    .psalgnerr(phsalgn_err)
-  );
+     .rst(reset),
+     .clk(pclk),
+     .sdata(rawdata),
+     .bitslip(bitslip),
+     .flipgear(flipgear),
+     .psaligned(iamvld)
+   );
 
-  assign psalgnerr = phsalgn_err;
+  assign psalgnerr = 1'b0;
 
+  ///////////////////////////////////////
+  // Per Channel De-skew Instance
+  ///////////////////////////////////////
   wire [9:0] sdata;
   chnlbond cbnd (
-    .clk(clk),
+    .clk(pclk),
     .rawdata(rawdata),
     .iamvld(iamvld),
     .other_ch0_vld(other_ch0_vld),
@@ -291,10 +175,16 @@ module decode # (
   // Below performs the 10B-8B decoding function defined in DVI 1.0
   // Specification: Section 3.3.3, Figure 3-6, page 31. 
   /////////////////////////////////////////////////////////////////
+  // Distinct Control Tokens
+  parameter CTRLTOKEN0 = 10'b1101010100;
+  parameter CTRLTOKEN1 = 10'b0010101011;
+  parameter CTRLTOKEN2 = 10'b0101010100;
+  parameter CTRLTOKEN3 = 10'b1010101011;
+
   wire [7:0] data;
   assign data = (sdata[9]) ? ~sdata[7:0] : sdata[7:0]; 
 
-  always @ (posedge clk) begin
+  always @ (posedge pclk) begin
     if(iamrdy && other_ch0_rdy && other_ch1_rdy) begin
       case (sdata) 
         CTRLTOKEN0: begin

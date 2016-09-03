@@ -8,20 +8,32 @@
       <ClosedNodes>
          <ClosedNodesVersion>2</ClosedNodesVersion>
          <ClosedNode>/Automatic `includes</ClosedNode>
+         <ClosedNode>/dvi2lvds |home|julbouln|Perso|fpga|dvi_lvds|dvi2lvds.v/dvi_rx0 - dvi_decoder</ClosedNode>
+         <ClosedNode>/dvi2lvds |home|julbouln|Perso|fpga|dvi_lvds|dvi2lvds.v/videoencoder - video_lvds</ClosedNode>
+         <ClosedNode>/dvi2lvds |home|julbouln|Perso|fpga|dvi_lvds|dvi_demo.v/dvi_rx0 - dvi_decoder</ClosedNode>
+         <ClosedNode>/dvi2lvds |home|julbouln|Perso|fpga|dvi_lvds|dvi_demo.v/videoencoder - video_lvds</ClosedNode>
          <ClosedNode>/dvi_decoder |home|julbouln|Perso|fpga|dvi|dvi_decoder.v</ClosedNode>
+         <ClosedNode>/dvi_demo |home|julbouln|Perso|fpga|dvi_lvds|dvi_demo.v/dvi_rx0 - dvi_decoder</ClosedNode>
+         <ClosedNode>/dvi_demo |home|julbouln|Perso|fpga|dvi_lvds|dvi_demo.v/dvi_rx0 - dvi_decoder/dec_b - decode</ClosedNode>
+         <ClosedNode>/dvi_demo |home|julbouln|Perso|fpga|dvi_lvds|dvi_demo.v/dvi_rx0 - dvi_decoder/dec_g - decode</ClosedNode>
+         <ClosedNode>/dvi_demo |home|julbouln|Perso|fpga|dvi_lvds|dvi_demo.v/dvi_rx0 - dvi_decoder/dec_r - decode</ClosedNode>
+         <ClosedNode>/dvi_demo |home|julbouln|Perso|fpga|dvi_lvds|dvi_demo.v/videoencoder - video_lvds</ClosedNode>
          <ClosedNode>/dvi_demo |home|julbouln|Perso|fpga|dvi|dvi_demo.v/dvi_rx0 - dvi_decoder</ClosedNode>
          <ClosedNode>/dvi_demo |home|julbouln|Perso|fpga|dvi|dvi_demo.v/dvi_tx0 - dvi_encoder</ClosedNode>
+         <ClosedNode>/dvi_encoder |home|julbouln|Perso|fpga|dvi_lvds|dvi_encoder.v</ClosedNode>
          <ClosedNode>/dvi_encoder |home|julbouln|Perso|fpga|dvi|dvi_encoder.v</ClosedNode>
+         <ClosedNode>/dvitx_demo |home|julbouln|Perso|fpga|dvi_lvds|dvitx_demo.v</ClosedNode>
          <ClosedNode>/dvitx_demo |home|julbouln|Perso|fpga|dvi|dvitx_demo.v</ClosedNode>
+         <ClosedNode>/serdes_4b_10to1 |home|julbouln|Perso|fpga|dvi_lvds|serdes_4b_10to1_fifo.v</ClosedNode>
       </ClosedNodes>
       <SelectedItems>
-         <SelectedItem>dvi_demo (/home/julbouln/Perso/fpga/dvi_lvds/dvi_demo.v)</SelectedItem>
+         <SelectedItem>dvi_lvds (/home/julbouln/Perso/fpga/dvi_lvds/dvi_lvds.v)</SelectedItem>
       </SelectedItems>
       <ScrollbarPosition orientation="vertical" >0</ScrollbarPosition>
       <ScrollbarPosition orientation="horizontal" >0</ScrollbarPosition>
-      <ViewHeaderState orientation="horizontal" >000000ff000000000000000100000001000000000000000000000000000000000202000000010000000100000064000001c2000000020000000000000000000000000200000064ffffffff000000810000000300000002000001c20000000100000003000000000000000100000003</ViewHeaderState>
+      <ViewHeaderState orientation="horizontal" >000000ff00000000000000010000000100000000000000000000000000000000020200000001000000010000006400000207000000020000000000000000000000000200000064ffffffff000000810000000300000002000002070000000100000003000000000000000100000003</ViewHeaderState>
       <UserChangedColumnWidths orientation="horizontal" >true</UserChangedColumnWidths>
-      <CurrentItem>dvi_demo (/home/julbouln/Perso/fpga/dvi_lvds/dvi_demo.v)</CurrentItem>
+      <CurrentItem>dvi_lvds (/home/julbouln/Perso/fpga/dvi_lvds/dvi_lvds.v)</CurrentItem>
    </ItemView>
    <ItemView engineview="SynthesisOnly" sourcetype="" guiview="Process" >
       <ClosedNodes>
@@ -29,13 +41,13 @@
          <ClosedNode>Design Utilities</ClosedNode>
       </ClosedNodes>
       <SelectedItems>
-         <SelectedItem></SelectedItem>
+         <SelectedItem/>
       </SelectedItems>
       <ScrollbarPosition orientation="vertical" >0</ScrollbarPosition>
       <ScrollbarPosition orientation="horizontal" >0</ScrollbarPosition>
       <ViewHeaderState orientation="horizontal" >000000ff000000000000000100000001000000000000000000000000000000000000000000000001c9000000010000000100000000000000000000000064ffffffff000000810000000000000001000001c90000000100000000</ViewHeaderState>
       <UserChangedColumnWidths orientation="horizontal" >false</UserChangedColumnWidths>
-      <CurrentItem></CurrentItem>
+      <CurrentItem/>
    </ItemView>
    <ItemView guiview="File" >
       <ClosedNodes>
@@ -44,9 +56,9 @@
       <SelectedItems/>
       <ScrollbarPosition orientation="vertical" >0</ScrollbarPosition>
       <ScrollbarPosition orientation="horizontal" >0</ScrollbarPosition>
-      <ViewHeaderState orientation="horizontal" >000000ff000000000000000100000000000000000100000000000000000000000000000000000001c9000000040101000100000000000000000000000064ffffffff000000810000000000000004000000510000000100000000000000290000000100000000000000840000000100000000000000cb0000000100000000</ViewHeaderState>
+      <ViewHeaderState orientation="horizontal" >000000ff000000000000000100000000000000000100000000000000000000000000000000000002fc000000040101000100000000000000000000000064ffffffff000000810000000000000004000000f100000001000000000000002900000001000000000000008400000001000000000000015e0000000100000000</ViewHeaderState>
       <UserChangedColumnWidths orientation="horizontal" >false</UserChangedColumnWidths>
-      <CurrentItem>autopilot.v</CurrentItem>
+      <CurrentItem>chnlbond.v</CurrentItem>
    </ItemView>
    <ItemView guiview="Library" >
       <ClosedNodes>
@@ -56,7 +68,7 @@
       <SelectedItems/>
       <ScrollbarPosition orientation="vertical" >0</ScrollbarPosition>
       <ScrollbarPosition orientation="horizontal" >0</ScrollbarPosition>
-      <ViewHeaderState orientation="horizontal" >000000ff000000000000000100000000000000000100000000000000000000000000000000000001c9000000010001000100000000000000000000000064ffffffff000000810000000000000001000001c90000000100000000</ViewHeaderState>
+      <ViewHeaderState orientation="horizontal" >000000ff00000000000000010000000000000000010000000000000000000000000000000000000125000000010001000100000000000000000000000064ffffffff000000810000000000000001000001250000000100000000</ViewHeaderState>
       <UserChangedColumnWidths orientation="horizontal" >false</UserChangedColumnWidths>
       <CurrentItem>work</CurrentItem>
    </ItemView>
@@ -70,13 +82,13 @@
          <ClosedNode>User Constraints</ClosedNode>
       </ClosedNodes>
       <SelectedItems>
-         <SelectedItem></SelectedItem>
+         <SelectedItem>Generate Programming File</SelectedItem>
       </SelectedItems>
       <ScrollbarPosition orientation="vertical" >3</ScrollbarPosition>
       <ScrollbarPosition orientation="horizontal" >0</ScrollbarPosition>
       <ViewHeaderState orientation="horizontal" >000000ff000000000000000100000001000000000000000000000000000000000000000000000001b9000000010000000100000000000000000000000064ffffffff000000810000000000000001000001b90000000100000000</ViewHeaderState>
       <UserChangedColumnWidths orientation="horizontal" >false</UserChangedColumnWidths>
-      <CurrentItem></CurrentItem>
+      <CurrentItem>Generate Programming File</CurrentItem>
    </ItemView>
    <ItemView engineview="SynthesisOnly" sourcetype="DESUT_UCF" guiview="Process" >
       <ClosedNodes>
@@ -84,13 +96,13 @@
          <ClosedNode>User Constraints</ClosedNode>
       </ClosedNodes>
       <SelectedItems>
-         <SelectedItem></SelectedItem>
+         <SelectedItem/>
       </SelectedItems>
       <ScrollbarPosition orientation="vertical" >0</ScrollbarPosition>
       <ScrollbarPosition orientation="horizontal" >0</ScrollbarPosition>
       <ViewHeaderState orientation="horizontal" >000000ff000000000000000100000001000000000000000000000000000000000000000000000001c9000000010000000100000000000000000000000064ffffffff000000810000000000000001000001c90000000100000000</ViewHeaderState>
       <UserChangedColumnWidths orientation="horizontal" >false</UserChangedColumnWidths>
-      <CurrentItem></CurrentItem>
+      <CurrentItem/>
    </ItemView>
    <SourceProcessView>000000ff0000000000000002000001510000012001000000060100000002</SourceProcessView>
    <CurrentView>Implementation</CurrentView>

@@ -1,14 +1,14 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-//  Xilinx, Inc. 2007                 www.xilinx.com
+//  Xilinx, Inc. 2010                 www.xilinx.com
 //
-//  XAPP 460
+//  XAPPxxx
 //
 //////////////////////////////////////////////////////////////////////////////
 //
 //  File name :       dvi_decoder.v
 //
-//  Description :     Wrap around decoder for all three TMDS channels
+//  Description :     Spartan-6 DVI decoder top module
 //
 //
 //  Author :          Bob Feng
@@ -44,11 +44,7 @@
 //////////////////////////////////////////////////////////////////////////////
 `timescale 1 ns / 1ps
 
-module dvi_decoder # (
-  parameter TMDS_INVERT = "FALSE"
-)
-(
-  input  wire clkin,          // clock input from board
+module dvi_decoder (
   input  wire tmdsclk_p,      // tmds clock
   input  wire tmdsclk_n,      // tmds clock
   input  wire blue_p,         // Blue data in
@@ -57,16 +53,33 @@ module dvi_decoder # (
   input  wire blue_n,         // Blue data in
   input  wire green_n,        // Green data in
   input  wire red_n,          // Red data in
+  input  wire exrst,          // external reset input, e.g. reset button
 
-  output wire clk,
-  output wire clkx5,
-  output wire clkx5not,
-  output wire reset,
+  output wire reset,          // rx reset
+  output wire pclk,           // regenerated pixel clock
+  output wire pclkx2,         // double rate pixel clock
+  output wire pclkx10,        // 10x pixel as IOCLK
+  output wire pllclk0,        // send pllclk0 out so it can be fed into a different BUFPLL
+  output wire pllclk1,        // PLL x1 output
+  output wire pllclk2,        // PLL x2 output
+
+  output wire pll_lckd,       // send pll_lckd out so it can be fed into a different BUFPLL
+  output wire serdesstrobe,   // BUFPLL serdesstrobe output
+  output wire tmdsclk,        // TMDS cable clock
 
   output wire hsync,          // hsync data
   output wire vsync,          // vsync data
   output wire de,             // data enable
-  output wire psalgnerr,      // channel phase alignment error
+  
+  output wire blue_vld,
+  output wire green_vld,
+  output wire red_vld,
+  output wire blue_rdy,
+  output wire green_rdy,
+  output wire red_rdy,
+
+  output wire psalgnerr,
+
   output wire [29:0] sdout,
   output wire [7:0] red,      // pixel data out
   output wire [7:0] green,    // pixel data out
@@ -74,41 +87,100 @@ module dvi_decoder # (
     
 
   wire [9:0] sdout_blue, sdout_green, sdout_red;
-
+/*
   assign sdout = {sdout_red[9], sdout_green[9], sdout_blue[9], sdout_red[8], sdout_green[8], sdout_blue[8],
                   sdout_red[7], sdout_green[7], sdout_blue[7], sdout_red[6], sdout_green[6], sdout_blue[6],
                   sdout_red[5], sdout_green[5], sdout_blue[5], sdout_red[4], sdout_green[4], sdout_blue[4],
                   sdout_red[3], sdout_green[3], sdout_blue[3], sdout_red[2], sdout_green[2], sdout_blue[2],
                   sdout_red[1], sdout_green[1], sdout_blue[1], sdout_red[0], sdout_green[0], sdout_blue[0]} ;
-
-
+*/
+  assign sdout = {sdout_red[9:5], sdout_green[9:5], sdout_blue[9:5],
+                  sdout_red[4:0], sdout_green[4:0], sdout_blue[4:0]};
 
   wire de_b, de_g, de_r;
 
   assign de = de_b;
 
-  wire stbclk = clkin;
-
-  wire blue_vld, green_vld, red_vld;
-  wire blue_rdy, green_rdy, red_rdy;
+ //wire blue_vld, green_vld, red_vld;
+ //wire blue_rdy, green_rdy, red_rdy;
 
   wire blue_psalgnerr, green_psalgnerr, red_psalgnerr;
 
-  decode # (
-    .TMDS_INVERT(TMDS_INVERT)
-  ) dec_b (
-    .stbclk       (stbclk),
-    .clk          (clk),
+  //
+  // Send TMDS clock to a differential buffer and then a BUFIO2
+  // This is a required path in Spartan-6 feed a PLL CLKIN
+  //
+  wire rxclkint;
+  IBUFDS  #(.IOSTANDARD("TMDS_33"), .DIFF_TERM("FALSE")
+  ) ibuf_rxclk (.I(tmdsclk_p), .IB(tmdsclk_n), .O(rxclkint));
+ 
+  wire rxclk;
+
+  BUFIO2 #(.DIVIDE_BYPASS("TRUE"), .DIVIDE(1))
+  bufio_tmdsclk (.DIVCLK(rxclk), .IOCLK(), .SERDESSTROBE(), .I(rxclkint));
+
+  BUFG tmdsclk_bufg (.I(rxclk), .O(tmdsclk));
+
+  //
+  // PLL is used to generate three clocks:
+  // 1. pclk:    same rate as TMDS clock
+  // 2. pclkx2:  double rate of pclk used for 5:10 soft gear box and ISERDES DIVCLK
+  // 3. pclkx10: 10x rate of pclk used as IO clock
+  //
+  PLL_BASE # (
+    .CLKIN_PERIOD(10),
+    .CLKFBOUT_MULT(10), //set VCO to 10x of CLKIN
+    .CLKOUT0_DIVIDE(1),
+    .CLKOUT1_DIVIDE(10),
+    .CLKOUT2_DIVIDE(5),
+    .COMPENSATION("INTERNAL")
+  ) PLL_ISERDES (
+    .CLKFBOUT(clkfbout),
+    .CLKOUT0(pllclk0),
+    .CLKOUT1(pllclk1),
+    .CLKOUT2(pllclk2),
+    .CLKOUT3(),
+    .CLKOUT4(),
+    .CLKOUT5(),
+    .LOCKED(pll_lckd),
+    .CLKFBIN(clkfbout),
+    .CLKIN(rxclk),
+    .RST(exrst)
+  );
+
+  //
+  // Pixel Rate clock buffer
+  //
+  BUFG pclkbufg (.I(pllclk1), .O(pclk));
+
+  //////////////////////////////////////////////////////////////////
+  // 2x pclk is going to be used to drive IOSERDES2 DIVCLK
+  //////////////////////////////////////////////////////////////////
+  BUFG pclkx2bufg (.I(pllclk2), .O(pclkx2));
+
+  //////////////////////////////////////////////////////////////////
+  // 10x pclk is used to drive IOCLK network so a bit rate reference
+  // can be used by IOSERDES2
+  //////////////////////////////////////////////////////////////////
+  
+  wire bufpll_lock;
+  BUFPLL #(.DIVIDE(5)) ioclk_buf (.PLLIN(pllclk0), .GCLK(pclkx2), .LOCKED(pll_lckd),
+           .IOCLK(pclkx10), .SERDESSTROBE(serdesstrobe), .LOCK(bufpll_lock));
+
+  assign reset = ~bufpll_lock;
+
+  decode dec_b (
+    .reset        (reset),
+    .pclk         (pclk),
+    .pclkx2       (pclkx2),
+    .pclkx10      (pclkx10),
+    .serdesstrobe (serdesstrobe),
     .din_p        (blue_p),
     .din_n        (blue_n),
     .other_ch0_rdy(green_rdy),
     .other_ch1_rdy(red_rdy),
     .other_ch0_vld(green_vld),
     .other_ch1_vld(red_vld),
-
-    .clkx5        (clkx5),
-    .clkx5not     (clkx5not),
-    .rst          (rst_b),
 
     .iamvld       (blue_vld),
     .iamrdy       (blue_rdy),
@@ -119,21 +191,18 @@ module dvi_decoder # (
     .sdout        (sdout_blue),
     .dout         (blue)) ;
 
-  decode # (
-    .TMDS_INVERT(TMDS_INVERT)
-  ) dec_g (
-    .stbclk       (stbclk),
-    .clk          (clk),
+  decode dec_g (
+    .reset        (reset),
+    .pclk         (pclk),
+    .pclkx2       (pclkx2),
+    .pclkx10      (pclkx10),
+    .serdesstrobe (serdesstrobe),
     .din_p        (green_p),
     .din_n        (green_n),
     .other_ch0_rdy(blue_rdy),
     .other_ch1_rdy(red_rdy),
     .other_ch0_vld(blue_vld),
     .other_ch1_vld(red_vld),
-
-    .clkx5        (),
-    .clkx5not     (),
-    .rst          (rst_g),
 
     .iamvld       (green_vld),
     .iamrdy       (green_rdy),
@@ -144,21 +213,18 @@ module dvi_decoder # (
     .sdout        (sdout_green),
     .dout         (green)) ;
     
-  decode # (
-    .TMDS_INVERT(TMDS_INVERT)
-  ) dec_r (
-    .stbclk       (stbclk),
-    .clk          (clk),
+  decode dec_r (
+    .reset        (reset),
+    .pclk         (pclk),
+    .pclkx2       (pclkx2),
+    .pclkx10      (pclkx10),
+    .serdesstrobe (serdesstrobe),
     .din_p        (red_p),
     .din_n        (red_n),
     .other_ch0_rdy(blue_rdy),
     .other_ch1_rdy(green_rdy),
     .other_ch0_vld(blue_vld),
     .other_ch1_vld(green_vld),
-
-    .clkx5        (),
-    .clkx5not     (),
-    .rst          (rst_r),
 
     .iamvld       (red_vld),
     .iamrdy       (red_rdy),
@@ -169,13 +235,8 @@ module dvi_decoder # (
     .sdout        (sdout_red),
     .dout         (red)) ;
 
-  wire rxclkint;
 
-  IBUFDS  #(.IOSTANDARD("TMDS_33"), .IBUF_DELAY_VALUE("0"), .IFD_DELAY_VALUE("0")) 
-  ibuf_clk (.I(tmdsclk_p), .IB(tmdsclk_n), .O(rxclkint));
-  BUFG  clk_bufg      (.I(rxclkint),      .O(clk));
 
   assign psalgnerr = red_psalgnerr | blue_psalgnerr | green_psalgnerr;
-  assign reset = rst_r | rst_b | rst_g;
 
 endmodule

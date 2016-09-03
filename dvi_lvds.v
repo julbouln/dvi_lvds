@@ -34,11 +34,9 @@ output channel1_p,
   wire [7:0] rx_blue;     // pixel data out
   wire [29:0] rx_sdata;
 
-  dvi_decoder # (
-    .TMDS_INVERT ("TRUE")
-  ) dvi_rx0 (
+  dvi_decoder dvi_rx0 (
     //These are input ports
-    .clkin       (clkin),
+//    .clkin       (clkin),
     .tmdsclk_p   (RX_TMDS[3]),
     .tmdsclk_n   (RX_TMDSB[3]),
     .blue_p      (RX_TMDS[0]),
@@ -47,11 +45,12 @@ output channel1_p,
     .blue_n      (RX_TMDSB[0]),
     .green_n     (RX_TMDSB[1]),
     .red_n       (RX_TMDSB[2]),
+    .exrst       (0),
 
     //These are output ports
-    .clk         (clk),
-    .clkx5       (clkx5),
-    .clkx5not    (clkx5not),
+    .pclk         (clk),
+//    .clkx5       (clkx5),
+//    .clkx5not    (clkx5not),
     .reset       (reset),
     .hsync       (rx_hsync),
     .vsync       (rx_vsync),
@@ -86,9 +85,13 @@ video_lvds videoencoder (
     );
 
 always @(posedge clk) begin
-	Red <= 255 - rx_red[7:2];
+/*	Red <= 255 - rx_red[7:2];
 	Blue <= 255 - rx_blue[7:2];
 	Green <= 255 - rx_green[7:2];
+*/
+  Red <= rx_red[7:2];
+  Blue <= rx_blue[7:2];
+  Green <= rx_green[7:2];
 end
 
 endmodule
